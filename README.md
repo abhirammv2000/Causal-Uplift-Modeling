@@ -185,6 +185,27 @@ randomized `treatment` (~85% treated), an `exposure` mediator, and `visit` /
 `conversion` outcomes. See [data/README.md](data/README.md) for schema and
 download details.
 
+## What I'd do next
+
+Deliberately scoped out to keep this focused, but the natural extensions — and
+the harder, more interesting causal questions — are:
+
+- **Treatment vs. exposure (ITT → CACE / IV).** Only ~3% of treated users were
+  actually exposed to the ad, so the campaign has a compliance problem. The
+  numbers here are *intent-to-treat*; estimating the **effect on the treated**
+  via an instrumental-variable / CACE analysis would use the dataset's `exposure`
+  mediator and handle non-compliance properly.
+- **Doubly-robust estimation (DR-learner).** Combine outcome and propensity
+  models so the uplift estimate stays consistent if either is right — the modern
+  default for robustness.
+- **From RCT to observational.** Criteo is randomized, so confounding is handled
+  for free. The harder tier — backdoor adjustment, sensitivity to *unobserved*
+  confounding, overlap diagnostics — is where causal inference gets genuinely
+  difficult and would be the most valuable extension.
+- **Model selection rigor.** Nested cross-validation and hyperparameter tuning
+  with uplift-aware (Qini) scoring, rather than library defaults.
+- **Interactive app.** A Streamlit targeting/ROI explorer over the trained model.
+
 ## References
 
 - Diemert, Betlei, Renaudin, Amini. *A Large Scale Benchmark for Uplift Modeling*, AdKDD 2018.
