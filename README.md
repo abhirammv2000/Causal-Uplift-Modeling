@@ -1,6 +1,6 @@
 # Causal Uplift Modeling on the Criteo Incrementality Dataset
 
-[![CI](https://github.com/ABHIRAM1234/Causal-Uplift-Modeling/actions/workflows/ci.yml/badge.svg)](https://github.com/ABHIRAM1234/Causal-Uplift-Modeling/actions/workflows/ci.yml)
+[![CI](https://github.com/abhirammv2000/Causal-Uplift-Modeling/actions/workflows/ci.yml/badge.svg)](https://github.com/abhirammv2000/Causal-Uplift-Modeling/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/python-3.11%E2%80%933.13-blue)
 ![License: MIT](https://img.shields.io/badge/license-MIT-green)
 
