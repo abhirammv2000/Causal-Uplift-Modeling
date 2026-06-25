@@ -1,0 +1,30 @@
+# Core scientific stack
+numpy>=1.26
+pandas>=2.1
+scipy>=1.11
+scikit-learn>=1.4
+
+# Gradient boosting base learners
+xgboost>=2.0
+lightgbm>=4.1
+
+# Uplift / causal modeling
+scikit-uplift>=0.5.1      # sklift: meta-learners + uplift metrics (pure-python, py3.13 friendly)
+# causalml>=0.15          # optional; heavy native build, often unavailable on Python 3.13 — see docs/INSTALL.md
+
+# Statistics & inference
+statsmodels>=0.14
+
+# Visualization
+matplotlib>=3.8
+seaborn>=0.13
+
+# Data IO / utils
+pyarrow>=15.0
+requests>=2.31
+tqdm>=4.66
+joblib>=1.3
+pyyaml>=6.0
+
+# Dev / testing
+pytest>=8.0

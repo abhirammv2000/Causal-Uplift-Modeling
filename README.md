@@ -1,179 +1,197 @@
-# Causal Uplift Modeling
+# Causal Uplift Modeling on the Criteo Incrementality Dataset
 
-A comprehensive collection of Jupyter notebooks exploring uplift modeling techniques for targeted marketing and causal inference. This repository demonstrates various approaches to identify customers who are most likely to respond positively to marketing interventions.
+[![CI](https://github.com/ABHIRAM1234/Causal-Uplift-Modeling/actions/workflows/ci.yml/badge.svg)](https://github.com/ABHIRAM1234/Causal-Uplift-Modeling/actions/workflows/ci.yml)
+![Python](https://img.shields.io/badge/python-3.11%E2%80%933.13-blue)
+![License: MIT](https://img.shields.io/badge/license-MIT-green)
 
-## 📊 Dataset
+Estimating **who to treat**, not just **who will convert**. This project builds
+and rigorously evaluates individual treatment-effect (uplift) models on the
+[Criteo AI Lab](https://ailab.criteo.com/criteo-uplift-prediction-dataset/)
+incrementality benchmark — a ~13.9M-user randomized controlled trial — to find
+the customers whose behavior *changes* because of a marketing intervention.
 
-All notebooks use the **Criteo AI Lab** anonymized dataset from incrementality tests:
-- **13 million rows** representing individual users
-- **12 anonymized features** (f0-f11) as dense float values
-- **Treatment indicators**: treatment (1=treated, 0=control) and exposure (effectively exposed)
-- **Target variables**: conversion (purchase) and visit (website visit)
-- **Global treatment ratio**: 84.6% treated, 15% control
+> Classical response models rank people by `P(convert)`. But many of them would
+> have converted anyway ("sure things"), and some are actively annoyed by being
+> targeted ("sleeping dogs"). Uplift modeling ranks by **incremental**
+> conversions — `P(convert | treated) − P(convert | not treated)` — which is the
+> quantity that actually drives marketing ROI.
 
-## 📚 Notebooks Overview
+This repo is structured as a reproducible Python package (`src/uplift`), not just
+notebooks: four uplift estimators behind a common interface, from-scratch
+uplift-specific metrics with a unit-tested correctness suite, a one-command
+experiment runner, and a synthetic data fallback so it runs the moment you clone
+it.
 
-### 1. Introduction to Uplift Modeling (`introduction-to-uplift-modeling.ipynb`)
-**Purpose**: Quick start guide to uplift modeling using CausalML
+---
 
-**Key Features**:
-- Basic exploratory data analysis
-- Implementation using CausalML library
-- UpliftTreeClassifier and UpliftRandomForestClassifier
-- Gain curve visualization
-- Beginner-friendly approach
+## Headline results — on the real, full dataset
 
-**Libraries**: `causalml`, `pandas`, `numpy`, `matplotlib`, `sklearn`
+Four uplift estimators trained on the **real Criteo data** (13.98M users; a 2M
+stratified subsample for modeling), evaluated on a held-out test set with proper
+uplift metrics. Base learner: LightGBM.
 
-### 2. Criteo Uplift Modelling (`criteo-uplift-modelling.ipynb`)
-**Purpose**: Comprehensive analysis with custom implementation
+| Model | Qini ↑ | AUUC ↑ | Uplift @ 10% | Uplift @ 30% |
+|-------|:------:|:------:|:------------:|:------------:|
+| **S-learner**           | **0.090** | **0.091** | **0.064** | 0.030 |
+| X-learner               | 0.082 | 0.084 | 0.064 | 0.030 |
+| T-learner               | 0.076 | 0.078 | 0.062 | 0.027 |
+| Class transformation    | 0.059 | 0.060 | 0.054 | 0.025 |
 
-**Key Features**:
-- **Advanced EDA** with correlation analysis and feature exploration
-- **Statistical significance testing** using proportions z-test
-- **Custom Uplift Model**: Generalized Weighted Uplift Model (LGWUM) with XGBoost
-- **Treatment vs Exposure analysis**: Compares partial vs full treatment effects
-- **Custom evaluation metrics**: Qini curves and uplift curves
-- **Data resampling**: Random undersampling to handle class imbalance
+*Qini / AUUC are normalized so 0 = random targeting and 1 = a perfect oracle.*
 
-**Methodology**:
-- Class Variable Transformation approach
-- Four customer segments: Persuadables, Sure Things, Lost Causes, Sleeping Dogs
-- Custom uplift score calculation: `P(TR)/P(T) + P(CN)/P(C) - P(TN)/P(T) - P(CR)/P(C)`
+**The signal is real, not noise.** Bootstrapped 95% CIs (S-learner, 300
+resamples): **Qini = 0.090 [0.075, 0.104]**, uplift@10% = 0.064 [0.055, 0.075] —
+both comfortably above zero.
 
-### 3. Marketing Campaign Uplift Modeling (`marketing-campaign-uplift-modeling.ipynb`)
-**Purpose**: Systematic comparison of different uplift modeling approaches
+**The business takeaway:** the average treatment effect on `visit` is just
+**+0.0103** (a +27% relative lift over the 3.8% control rate). But the model's
+**top 10% of users show an uplift of +0.064 — about 6× the average.**
+Concentrating spend on that decile, instead of treating everyone, is exactly
+where uplift modeling pays for itself.
 
-**Key Features**:
-- **Meta-Learners comparison**:
-  - **T-Learners**: Separate models for treatment and control groups
-  - **S-Learners**: Single model with treatment as feature
-- **Multiple base algorithms**: Decision Trees, LightGBM, XGBoost
-- **Uplift Trees**: Direct uplift prediction using CausalML
-- **Custom implementation** vs library-based approaches
-- **Comprehensive evaluation**: Multiple uplift metrics (AUUC, AUQC, Weighted Average Uplift)
+<p align="center">
+  <img src="reports/figures/qini.png" width="32%" alt="Qini curves"/>
+  <img src="reports/figures/uplift.png" width="32%" alt="Uplift curves"/>
+  <img src="reports/figures/calibration.png" width="32%" alt="Uplift calibration"/>
+</p>
 
-**Libraries**: `scikit-uplift`, `causalml`, `lightgbm`, `xgboost`
+> These numbers come from the full real dataset:
+> `python scripts/download_data.py` then
+> `python scripts/run_experiment.py --use-raw`. The repo also ships a small
+> **synthetic** Criteo-like sample so everything (notebooks, tests, the default
+> `run_experiment.py`) runs in seconds on clone without the ~290 MB download —
+> see [data/README.md](data/README.md). Real data is not redistributed.
 
-### 4. Uplift Modeling Using Advertising Data (`uplift-modeling-using-advertising-data.ipynb`)
-**Purpose**: Business-focused comparison of Classical vs Uplift modeling
+---
 
-**Key Features**:
-- **Classical Modeling (Response Model)**:
-  - Traditional approach using only treated users
-  - Logistic Regression vs XGBoost comparison
-  - SMOTE for handling class imbalance
-- **Uplift Modeling**:
-  - Single Model and Two Models approaches
-  - Business profit/cost analysis with custom value equations
-  - Customer segmentation profiles
-- **Business Metrics**:
-  - Profit curves with realistic cost assumptions ($1 campaign cost, $50 conversion value)
-  - Cumulative uplift curves
-  - ROI analysis
+## Why this is a *causal* problem (and how I keep it honest)
 
-**Methodology**:
-- Data preprocessing: Scaling, stratified splitting
-- Statistical testing for treatment effectiveness
-- Custom profit calculation functions
-- Customer profile analysis using radar charts
+The fundamental problem of causal inference is that we never observe both
+outcomes for the same person — only treated-or-not. The Criteo data sidesteps
+confounding because treatment was **randomized**, so:
 
-## 🔬 Key Methodologies
+- **Evaluation is unbiased by construction.** Ranking quality is measured against
+  the real treated/control arms via the **Qini** and **uplift (AUUC)** curves —
+  not classification accuracy, which is meaningless here.
+- **The metrics are sign-aware and tested.** `tests/test_evaluation.py` asserts
+  the properties that must hold: a perfect ranking beats random, a random
+  ranking scores ≈ 0 Qini, and ranking by *anti*-uplift scores **below** random.
+- **Uncertainty and calibration, not just a point score.** Every headline metric
+  ships with a **bootstrap confidence interval**, and an **uplift calibration**
+  curve checks that *predicted* uplift matches *realized* uplift per bin — a
+  stronger claim than merely ranking units in the right order.
+- **I'm precise about scope.** Because Criteo is an RCT, this is *heterogeneous
+  treatment-effect estimation*, not de-confounding of observational data. The
+  X-learner and class-transformation models still carry the propensity machinery
+  needed for the observational case (Criteo's assignment is a strongly imbalanced
+  ~85/15), so the same code generalizes.
 
-### Uplift Modeling Approaches
-1. **Meta-Learners**:
-   - **T-Learner**: Train separate models for treated/control groups
-   - **S-Learner**: Single model with treatment as feature
-   
-2. **Direct Methods**:
-   - **Uplift Trees**: Modified decision trees for direct uplift prediction
-   - **Class Transformation**: LGWUM approach
+---
 
-### Customer Segmentation
-- **Persuadables**: Convert only if treated (target customers)
-- **Sure Things**: Convert regardless of treatment (avoid targeting)
-- **Lost Causes**: Never convert (avoid targeting)
-- **Sleeping Dogs**: Convert only if NOT treated (avoid targeting)
+## Methods
 
-### Evaluation Metrics
-- **Qini Coefficient**: Area under Qini curve
-- **Uplift AUC**: Area under uplift curve
-- **Uplift@K**: Uplift at top K% of customers
-- **Weighted Average Uplift**: Overall uplift performance
-- **Business Profit Curves**: Real-world ROI analysis
+Four estimators spanning the standard uplift taxonomy, all behind one
+`fit(X, y, t) → predict_uplift(X)` interface (`src/uplift/models.py`):
 
-## 🛠️ Technical Requirements
+| Estimator | Idea | Notes |
+|-----------|------|-------|
+| **S-learner** | One model on `[X, t]`; uplift = `μ(x,1) − μ(x,0)` | Simple, strong baseline |
+| **T-learner** | Separate treated/control outcome models | Clean, can overfit small arms |
+| **X-learner** | Impute per-unit effects, regress them, blend by propensity | Robust under treatment imbalance (Künzel et al. 2019) |
+| **Class transformation** | Revert the label so one classifier learns uplift directly | Inverse-propensity reweighted for the 85/15 split (Jaśkowski & Jaroszewicz 2012) |
 
-```python
-# Core libraries
-pandas
-numpy
-matplotlib
-seaborn
-scikit-learn
+Base learners are pluggable: LightGBM, XGBoost, histogram GBDT, or
+logistic/linear regression.
 
-# Uplift modeling specific
-causalml
-scikit-uplift
+**Evaluation** (`src/uplift/evaluation.py`, all from scratch): Qini curve &
+coefficient, uplift/AUUC curve & score, uplift@k, and weighted-average uplift.
 
-# Machine learning models
-xgboost
-lightgbm
+---
 
-# Statistical analysis
-statsmodels
+## Repository layout
 
-# Data balancing
-imbalanced-learn
-
-# Visualization
-plotly
+```
+src/uplift/            Installable package — the real work lives here
+  config.py            Paths, dataset schema, ExperimentConfig
+  data.py              Download, load, stratified sample, uplift-aware split
+  models.py            S- / T- / X-learner + class transformation
+  evaluation.py        Qini, AUUC, uplift@k, bootstrap CIs, calibration
+  business.py          profit curves, ROI, optimal targeting depth
+  pipeline.py          load → split → fit → evaluate, in one call
+scripts/
+  download_data.py     Fetch the full ~290 MB Criteo file
+  make_sample.py       Build the committed sample (subsample real, or synthesize)
+  run_experiment.py    Train all models, write reports/metrics.csv + figures
+notebooks/             Narrative analysis (EDA → meta-learners → business case)
+tests/                 pytest suite for metrics, models, and the pipeline
+data/sample/           Small parquet sample so the repo runs out of the box
+reports/figures/       Generated Qini / uplift curves
 ```
 
-## 🚀 Getting Started
+---
 
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/your-username/Causal-Uplift-Modeling.git
-   cd Causal-Uplift-Modeling
-   ```
+## Quickstart
 
-2. **Install dependencies**:
-   ```bash
-   pip install -r requirements.txt
-   ```
+```bash
+pip install -r requirements.txt        # see docs/INSTALL.md (note on causalml)
 
-3. **Start with the introduction**:
-   - Begin with `introduction-to-uplift-modeling.ipynb` for basic concepts
-   - Progress to `criteo-uplift-modelling.ipynb` for advanced techniques
-   - Explore `marketing-campaign-uplift-modeling.ipynb` for methodology comparison
-   - Review `uplift-modeling-using-advertising-data.ipynb` for business applications
+python scripts/make_sample.py          # build data/sample (synthetic if no raw file)
+python scripts/run_experiment.py       # train 4 models → reports/metrics.csv + figures
+pytest -q                              # run the test suite
+```
 
-## 📈 Business Applications
+Run on the full dataset:
 
-- **Targeted Marketing**: Identify customers most likely to respond to promotions
-- **Churn Prevention**: Find customers who will stay only if contacted
-- **Product Recommendations**: Optimize recommendation strategies
-- **A/B Testing**: Move beyond average treatment effects to individual-level insights
-- **Resource Optimization**: Reduce marketing costs by avoiding unnecessary targeting
+```bash
+python scripts/download_data.py
+python scripts/run_experiment.py --use-raw --n-rows 2000000 --base-learner lgbm
+```
 
-## 🎯 Key Insights
+Use the package directly:
 
-1. **Treatment vs Exposure**: Only 3.6% of treated users were effectively exposed, highlighting implementation challenges
-2. **Business Impact**: Uplift modeling can significantly improve ROI compared to random or classical targeting
-3. **Model Comparison**: Different approaches work better for different business scenarios
-4. **Evaluation Complexity**: Uplift models require specialized metrics beyond traditional classification metrics
+```python
+from uplift import data, pipeline
+from uplift.config import ExperimentConfig
 
-## 📝 References
+df = data.load_sample()
+result = pipeline.run_experiment(df, ExperimentConfig(outcome="visit"))
+print(result.metrics)          # ranked metrics table
+print(result.ate)              # observed average treatment effect
+```
 
-- Criteo AI Lab Dataset: [Kaggle Uplift Modeling](https://www.kaggle.com/arashnic/uplift-modeling)
-- Gutierrez, P., & Gérardy, J. Y. (2017). Causal Inference and Uplift Modelling: A Review of the Literature
-- Kane, K., Lo, V. S., & Zheng, J. (2014). Mining for the Truly Responsive Customers and Prospects Using True-Lift Modeling
+---
 
-## 🤝 Contributing
+## Notebooks
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Three notebooks, **all runnable** against the `uplift` package and the committed
+sample (no Kaggle paths, no manual setup — each is executed with outputs):
 
-## 📄 License
+0. [**Flagship analysis**](notebooks/00_flagship_uplift_analysis.ipynb) — the
+   end-to-end story: data → ATE → 4 models → Qini/AUUC → bootstrap CI →
+   calibration → targeting payoff.
+1. [**Exploratory data analysis**](notebooks/01_exploratory_data_analysis.ipynb)
+   — base rates, two-proportion significance tests, a covariate-balance check
+   that randomization holds, and the four uplift segments.
+2. [**Business case**](notebooks/02_business_case_profit_curves.ipynb) — profit
+   curves and ROI: the optimal targeting depth and what uplift targeting earns
+   vs. treating everyone or targeting at random (`src/uplift/business.py`).
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+---
+
+## Dataset
+
+Criteo AI Lab Uplift v2.1: ~13.9M users, 12 anonymized features (`f0`–`f11`),
+randomized `treatment` (~85% treated), an `exposure` mediator, and `visit` /
+`conversion` outcomes. See [data/README.md](data/README.md) for schema and
+download details.
+
+## References
+
+- Diemert, Betlei, Renaudin, Amini. *A Large Scale Benchmark for Uplift Modeling*, AdKDD 2018.
+- Künzel, Sekhon, Bickel, Yu. *Metalearners for estimating heterogeneous treatment effects*, PNAS 2019.
+- Jaśkowski & Jaroszewicz. *Uplift modeling for clinical trial data*, ICML 2012.
+- Gutierrez & Gérardy. *Causal Inference and Uplift Modelling: A Review*, 2017.
+
+## License
+
+MIT — see [LICENSE](LICENSE).

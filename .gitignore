@@ -1,0 +1,43 @@
+# Data — never commit the full Criteo file (~300MB+). Only the small sample is tracked.
+data/raw/
+data/processed/
+data/external/
+*.csv
+*.csv.gz
+*.parquet
+!data/sample/**
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.ipynb_checkpoints/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Models / artifacts
+models/*.pkl
+models/*.joblib
+
+# Generated figures are ignored, except the two headline curves shown in the README.
+reports/figures/*.png
+!reports/figures/.gitkeep
+!reports/figures/qini.png
+!reports/figures/uplift.png
+!reports/figures/calibration.png
+
+# Environments
+.venv/
+venv/
+env/
+.env
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
