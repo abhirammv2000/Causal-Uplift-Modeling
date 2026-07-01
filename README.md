@@ -18,9 +18,10 @@ the customers whose behavior *changes* because of a marketing intervention.
 
 This repo is structured as a reproducible Python package (`src/uplift`), not just
 notebooks: four uplift estimators behind a common interface, from-scratch
-uplift-specific metrics with a unit-tested correctness suite, a one-command
-experiment runner, and a synthetic data fallback so it runs the moment you clone
-it.
+uplift-specific metrics with a unit-tested correctness suite, an
+instrumental-variable (CACE/Wald) analysis that goes from intent-to-treat to the
+effect on the *exposed*, a one-command experiment runner, and a synthetic data
+fallback so it runs the moment you clone it.
 
 ---
 
@@ -42,6 +43,14 @@ uplift metrics. Base learner: LightGBM.
 **The signal is real, not noise.** Bootstrapped 95% CIs (S-learner, 300
 resamples): **Qini = 0.090 [0.075, 0.104]**, uplift@10% = 0.064 [0.055, 0.075] —
 both comfortably above zero.
+
+**But the model *ranking* is not statistically resolved — and I say so.** A
+**paired bootstrap** (all models scored on the same resamples,
+`evaluation.compare_models_bootstrap`) shows the meta-learner Qini differences
+have CIs that straddle zero: they're a **statistical tie**. The table leads with
+the S-learner not because it's provably best, but because it's the **simplest
+model among equals** — the honest reading when intervals overlap. Class
+transformation has the weakest point estimates throughout.
 
 **The business takeaway:** the average treatment effect on `visit` is just
 **+0.0103** (a +27% relative lift over the 3.8% control rate). But the model's
@@ -86,6 +95,31 @@ confounding because treatment was **randomized**, so:
   needed for the observational case (Criteo's assignment is a strongly imbalanced
   ~85/15), so the same code generalizes.
 
+### From intent-to-treat to effect-on-the-exposed (CACE / IV)
+
+Targeting and *exposure* are not the same thing: only a fraction of targeted
+users were actually shown an ad (the `exposure` mediator). So every uplift number
+above is **intent-to-treat** — the effect of being *targeted*, diluted by everyone
+who was targeted but never saw an ad. Treating randomized assignment as an
+**instrument** for exposure, the Wald estimator recovers the **complier average
+causal effect (CACE / LATE)** — the effect on the users the ad actually reached:
+
+```
+CACE = ITT_Y / ITT_D = (effect of assignment on outcome) / (effect of assignment on exposure)
+```
+
+On the committed sample (`visit`): **ITT = +0.009**, first stage = 0.35, so
+**CACE = +0.027** (95% CI excludes zero) — about 3× the ITT, because the effect is
+concentrated in the third of users who actually saw the ad. This is the one
+quasi-experimental method the dataset supports (one-sided non-compliance — a
+control user is never exposed); it's `src/uplift/iv.py`, unit-tested in
+`tests/test_iv.py`, and runs with:
+
+```bash
+python scripts/estimate_cace.py            # synthetic sample
+python scripts/estimate_cace.py --use-raw  # full real data
+```
+
 ---
 
 ## Methods
@@ -117,11 +151,15 @@ src/uplift/            Installable package — the real work lives here
   models.py            S- / T- / X-learner + class transformation
   evaluation.py        Qini, AUUC, uplift@k, bootstrap CIs, calibration
   business.py          profit curves, ROI, optimal targeting depth
+  iv.py                CACE / LATE via the Wald estimator (non-compliance)
   pipeline.py          load → split → fit → evaluate, in one call
 scripts/
   download_data.py     Fetch the full ~290 MB Criteo file
   make_sample.py       Build the committed sample (subsample real, or synthesize)
   run_experiment.py    Train all models, write reports/metrics.csv + figures
+  estimate_cace.py     ITT vs. CACE: the effect on the *exposed*, not just targeted
+app/
+  streamlit_app.py     Interactive targeting / ROI explorer over the trained models
 notebooks/             Narrative analysis (EDA → meta-learners → business case)
 tests/                 pytest suite for metrics, models, and the pipeline
 data/sample/           Small parquet sample so the repo runs out of the box
@@ -147,6 +185,13 @@ python scripts/download_data.py
 python scripts/run_experiment.py --use-raw --n-rows 2000000 --base-learner lgbm
 ```
 
+Launch the interactive targeting / ROI explorer:
+
+```bash
+pip install streamlit
+streamlit run app/streamlit_app.py     # set value/cost → live profit curve + optimal depth
+```
+
 Use the package directly:
 
 ```python
@@ -167,8 +212,8 @@ Three notebooks, **all runnable** against the `uplift` package and the committed
 sample (no Kaggle paths, no manual setup — each is executed with outputs):
 
 0. [**Flagship analysis**](notebooks/00_flagship_uplift_analysis.ipynb) — the
-   end-to-end story: data → ATE → 4 models → Qini/AUUC → bootstrap CI →
-   calibration → targeting payoff.
+   end-to-end story: data → ATE → ITT vs. CACE → 4 models → Qini/AUUC → paired
+   bootstrap (are the models really different?) → calibration → targeting payoff.
 1. [**Exploratory data analysis**](notebooks/01_exploratory_data_analysis.ipynb)
    — base rates, two-proportion significance tests, a covariate-balance check
    that randomization holds, and the four uplift segments.
@@ -190,11 +235,6 @@ download details.
 Deliberately scoped out to keep this focused, but the natural extensions — and
 the harder, more interesting causal questions — are:
 
-- **Treatment vs. exposure (ITT → CACE / IV).** Only ~3% of treated users were
-  actually exposed to the ad, so the campaign has a compliance problem. The
-  numbers here are *intent-to-treat*; estimating the **effect on the treated**
-  via an instrumental-variable / CACE analysis would use the dataset's `exposure`
-  mediator and handle non-compliance properly.
 - **Doubly-robust estimation (DR-learner).** Combine outcome and propensity
   models so the uplift estimate stays consistent if either is right — the modern
   default for robustness.
@@ -204,7 +244,6 @@ the harder, more interesting causal questions — are:
   difficult and would be the most valuable extension.
 - **Model selection rigor.** Nested cross-validation and hyperparameter tuning
   with uplift-aware (Qini) scoring, rather than library defaults.
-- **Interactive app.** A Streamlit targeting/ROI explorer over the trained model.
 
 ## References
 
