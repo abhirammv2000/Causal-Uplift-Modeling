@@ -3,7 +3,8 @@
 import numpy as np
 import pytest
 
-from uplift import config, evaluation as ev, models
+from uplift import config, models
+from uplift import evaluation as ev
 from uplift.config import ExperimentConfig
 from uplift.data import make_xyt
 

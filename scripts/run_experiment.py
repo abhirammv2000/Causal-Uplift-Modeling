@@ -78,6 +78,15 @@ def main() -> None:
     ax.figure.savefig(config.FIGURES_DIR / "uplift.png", dpi=120, bbox_inches="tight")
     plt.close(ax.figure)
 
+    # Calibration for the best model (the third README figure).
+    best = result.metrics.index[0]
+    calib = evaluation.uplift_calibration(
+        result.y_test, result.t_test, result.predictions[best]
+    )
+    ax = evaluation.plot_calibration(calib, title=f"Uplift calibration - {best}")
+    ax.figure.savefig(config.FIGURES_DIR / "calibration.png", dpi=120, bbox_inches="tight")
+    plt.close(ax.figure)
+
     print(f"\nSaved metrics -> {reports_dir / 'metrics.csv'}")
     print(f"Saved figures -> {config.FIGURES_DIR}")
 

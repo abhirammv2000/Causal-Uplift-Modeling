@@ -157,7 +157,7 @@ def weighted_average_uplift(y, t, uplift, bins: int = 10) -> float:
     y, t = y[order], t[order]
     edges = np.linspace(0, len(y), bins + 1).astype(int)
     total_w, acc = 0.0, 0.0
-    for lo, hi in zip(edges[:-1], edges[1:]):
+    for lo, hi in zip(edges[:-1], edges[1:], strict=True):
         if hi <= lo:
             continue
         yb, tb = y[lo:hi], t[lo:hi]
@@ -205,6 +205,14 @@ def evaluate(y, t, uplift) -> UpliftReport:
 # --------------------------------------------------------------------------- #
 # Uncertainty: bootstrap confidence intervals
 # --------------------------------------------------------------------------- #
+_METRIC_FNS = {
+    "qini": qini_auc_score,
+    "auuc": auuc_score,
+    "uplift@10%": lambda yy, tt, uu: uplift_at_k(yy, tt, uu, 0.10),
+    "uplift@30%": lambda yy, tt, uu: uplift_at_k(yy, tt, uu, 0.30),
+}
+
+
 def bootstrap_metric(
     y, t, uplift,
     metric: str = "qini",
@@ -220,15 +228,9 @@ def bootstrap_metric(
     recomputing the metric gives an honest interval. Returns ``point``, ``lo``,
     ``hi`` (the (1-alpha) percentile CI), and ``se``.
     """
-    fns = {
-        "qini": qini_auc_score,
-        "auuc": auuc_score,
-        "uplift@10%": lambda yy, tt, uu: uplift_at_k(yy, tt, uu, 0.10),
-        "uplift@30%": lambda yy, tt, uu: uplift_at_k(yy, tt, uu, 0.30),
-    }
-    if metric not in fns:
-        raise ValueError(f"metric must be one of {list(fns)}, got {metric!r}")
-    fn = fns[metric]
+    if metric not in _METRIC_FNS:
+        raise ValueError(f"metric must be one of {list(_METRIC_FNS)}, got {metric!r}")
+    fn = _METRIC_FNS[metric]
     y, t, uplift = _as_arrays(y, t, uplift)
 
     rng = np.random.default_rng(random_state)
@@ -247,6 +249,71 @@ def bootstrap_metric(
     }
 
 
+def compare_models_bootstrap(
+    y, t,
+    predictions: dict[str, np.ndarray],
+    metric: str = "qini",
+    *,
+    n_boot: int = 300,
+    alpha: float = 0.05,
+    random_state: int = 42,
+) -> pd.DataFrame:
+    """Paired bootstrap to test whether models are *significantly* different.
+
+    A leaderboard that ranks models by a point metric is misleading when their
+    confidence intervals overlap. This resamples the evaluation set **once per
+    iteration** and scores every model on the *same* resample, so the paired
+    difference ``best − other`` cancels the shared sampling noise — the right way
+    to ask "is the top model really better, or is this within noise?".
+
+    Returns a DataFrame indexed by model (sorted by point, best first) with:
+    ``point``, ``lo``/``hi`` (per-model CI), ``diff_vs_best`` and its
+    ``diff_lo``/``diff_hi`` CI, and ``tied`` (True when that CI contains 0, i.e.
+    the model is statistically indistinguishable from the best).
+    """
+    if metric not in _METRIC_FNS:
+        raise ValueError(f"metric must be one of {list(_METRIC_FNS)}, got {metric!r}")
+    fn = _METRIC_FNS[metric]
+    names = list(predictions)
+    y = np.asarray(y, dtype=float).ravel()
+    t = np.asarray(t, dtype=float).ravel()
+    preds = {k: np.asarray(v, dtype=float).ravel() for k, v in predictions.items()}
+
+    points = {k: float(fn(y, t, preds[k])) for k in names}
+    best = max(names, key=lambda k: points[k])
+
+    rng = np.random.default_rng(random_state)
+    n = len(y)
+    draws = {k: np.empty(n_boot) for k in names}
+    for b in range(n_boot):
+        idx = rng.integers(0, n, n)
+        yb, tb = y[idx], t[idx]
+        for k in names:
+            draws[k][b] = fn(yb, tb, preds[k][idx])
+
+    lo_q, hi_q = 100 * alpha / 2, 100 * (1 - alpha / 2)
+    rows = []
+    for k in names:
+        s = draws[k][np.isfinite(draws[k])]
+        lo, hi = np.percentile(s, [lo_q, hi_q])
+        diff = draws[best] - draws[k]
+        diff = diff[np.isfinite(diff)]
+        dlo, dhi = np.percentile(diff, [lo_q, hi_q])
+        rows.append({
+            "model": k,
+            "point": points[k],
+            "lo": float(lo),
+            "hi": float(hi),
+            "diff_vs_best": points[best] - points[k],
+            "diff_lo": float(dlo),
+            "diff_hi": float(dhi),
+            "tied": bool(dlo <= 0.0 <= dhi),
+        })
+    return (
+        pd.DataFrame(rows).set_index("model").sort_values("point", ascending=False)
+    )
+
+
 # --------------------------------------------------------------------------- #
 # Calibration: do predicted uplifts match realized uplifts?
 # --------------------------------------------------------------------------- #
@@ -263,7 +330,7 @@ def uplift_calibration(y, t, uplift, bins: int = 10) -> pd.DataFrame:
     y, t, u = y[order], t[order], uplift[order]
     edges = np.linspace(0, len(y), bins + 1).astype(int)
     rows = []
-    for i, (lo, hi) in enumerate(zip(edges[:-1], edges[1:])):
+    for i, (lo, hi) in enumerate(zip(edges[:-1], edges[1:], strict=True)):
         if hi <= lo:
             continue
         yb, tb, ub = y[lo:hi], t[lo:hi], u[lo:hi]

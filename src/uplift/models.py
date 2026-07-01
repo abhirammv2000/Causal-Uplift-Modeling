@@ -126,7 +126,7 @@ class BaseUpliftModel(ABC):
     name: str = "base"
 
     @abstractmethod
-    def fit(self, X, y, t) -> "BaseUpliftModel": ...
+    def fit(self, X, y, t) -> BaseUpliftModel: ...
 
     @abstractmethod
     def predict_uplift(self, X) -> np.ndarray: ...
@@ -254,7 +254,9 @@ MODEL_REGISTRY: dict[str, type[BaseUpliftModel]] = {
 }
 
 
-def build_model(name: str, base_learner: str = "lgbm", random_state: int = 42, **kw) -> BaseUpliftModel:
+def build_model(
+    name: str, base_learner: str = "lgbm", random_state: int = 42, **kw
+) -> BaseUpliftModel:
     """Instantiate an uplift model by registry key."""
     key = name.lower()
     if key not in MODEL_REGISTRY:

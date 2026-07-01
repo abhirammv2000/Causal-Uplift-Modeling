@@ -46,4 +46,6 @@ def test_high_cost_shrinks_targeting(trial):
 
 def test_validation():
     with pytest.raises(ValueError):
-        business.profit_curve([1, 0], [1, 0], [0.1, 0.2], value_per_conversion=0, cost_per_treatment=1)
+        business.profit_curve(
+            [1, 0], [1, 0], [0.1, 0.2], value_per_conversion=0, cost_per_treatment=1
+        )

@@ -29,6 +29,8 @@ class ExperimentResult:
     fitted: dict[str, modelmod.BaseUpliftModel]
     predictions: dict[str, np.ndarray]
     ate: float
+    y_test: np.ndarray            # held-out outcomes, for calibration / drill-down
+    t_test: np.ndarray            # held-out treatment, aligned with predictions
 
 
 def average_treatment_effect(y, t) -> float:
@@ -68,4 +70,7 @@ def run_experiment(
     metrics = (
         pd.DataFrame(rows).set_index("model").sort_values("qini", ascending=False)
     )
-    return ExperimentResult(metrics, qini_curves, uplift_curves, fitted, preds, ate)
+    return ExperimentResult(
+        metrics, qini_curves, uplift_curves, fitted, preds, ate,
+        np.asarray(y_te), np.asarray(t_te),
+    )

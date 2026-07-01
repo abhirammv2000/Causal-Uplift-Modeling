@@ -38,24 +38,30 @@ def synthesize(n: int, seed: int = 42) -> pd.DataFrame:
     F = config.FEATURES
     X = rng.standard_normal((n, len(F))).astype("float32")
 
-    # Randomized, imbalanced assignment (matches Criteo's ~85% treated).
+    # Randomized, imbalanced assignment (matches Criteo's ~85% treated). This is
+    # the *instrument*: it is random, so it is a valid handle on exposure.
     t = (rng.random(n) < 0.85).astype("int8")
+
+    # Exposure is the true mediator: only the "compliers" among the assigned
+    # actually see the ad. One-sided non-compliance — a control user is never
+    # exposed — exactly as in the real Criteo campaign (where exposure is low).
+    compliance_rate = 0.35
+    exposure = ((t == 1) & (rng.random(n) < compliance_rate)).astype("int8")
 
     # Baseline visit propensity (~5%) driven by a few features.
     base = -3.0 + 0.6 * X[:, 0] + 0.4 * X[:, 3] - 0.3 * X[:, 7]
 
-    # Heterogeneous uplift: persuadables where f1 high, sleeping dogs where f5 high.
+    # Heterogeneous effect: persuadables where f1 high, sleeping dogs where f5
+    # high. The effect flows through *exposure*, not mere assignment (exclusion
+    # restriction), so being targeted helps only via actually seeing the ad.
     tau = 0.9 * X[:, 1] - 0.7 * X[:, 5] + 0.3 * X[:, 2]
 
-    p_visit = _sigmoid(base + t * tau)
+    p_visit = _sigmoid(base + exposure * tau)
     visit = (rng.random(n) < p_visit).astype("int8")
 
     # Conversion is rarer and only really happens given a visit.
-    p_conv = _sigmoid(-2.0 + 1.5 * (visit == 1) + 0.4 * X[:, 4] + 0.5 * t * X[:, 1])
+    p_conv = _sigmoid(-2.0 + 1.5 * (visit == 1) + 0.4 * X[:, 4] + 0.5 * exposure * X[:, 1])
     conversion = ((rng.random(n) < p_conv) & (visit == 1)).astype("int8")
-
-    # Exposure: only some treated users actually saw the ad (a mediator).
-    exposure = ((t == 1) & (rng.random(n) < 0.04)).astype("int8")
 
     out = pd.DataFrame(X, columns=F)
     out[config.TREATMENT_COL] = t

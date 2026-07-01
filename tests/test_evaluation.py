@@ -94,3 +94,37 @@ def test_calibration_shape_and_signal(trial):
     assert {"predicted_uplift", "observed_uplift", "n"}.issubset(calib.columns)
     # predicted uplift must be monotonically non-decreasing across sorted bins
     assert calib["predicted_uplift"].is_monotonic_increasing
+
+
+def test_matches_scikit_uplift(trial):
+    """Cross-check the from-scratch metrics against the reference sklift library."""
+    sklift_metrics = pytest.importorskip("sklift.metrics")
+    y, t, u = trial
+    # uplift@k is an exact, unambiguous quantity — it must match to the bit.
+    assert ev.uplift_at_k(y, t, u, 0.3) == pytest.approx(
+        sklift_metrics.uplift_at_k(y, u, t, strategy="overall", k=0.3), abs=1e-9
+    )
+    # Normalized Qini agrees with sklift's to a tight tolerance (tiny differences
+    # come only from trapezoid endpoint / tie handling).
+    assert ev.qini_auc_score(y, t, u) == pytest.approx(
+        sklift_metrics.qini_auc_score(y, u, t), abs=0.01
+    )
+
+
+def test_compare_models_bootstrap_flags_ties(trial):
+    y, t, true_uplift = trial
+    rng = np.random.default_rng(3)
+    preds = {
+        "good": true_uplift,
+        "good_copy": true_uplift + rng.normal(0, 1e-9, len(y)),  # ~identical
+        "random": rng.normal(size=len(y)),
+    }
+    cmp = ev.compare_models_bootstrap(y, t, preds, "qini", n_boot=100, random_state=0)
+    # best model is one of the two near-identical "good" models
+    assert cmp.index[0] in {"good", "good_copy"}
+    # the near-identical twin is statistically tied with the best...
+    twin = "good_copy" if cmp.index[0] == "good" else "good"
+    assert bool(cmp.loc[twin, "tied"])
+    # ...while a random scorer is significantly worse (diff CI excludes 0).
+    assert not bool(cmp.loc["random", "tied"])
+    assert cmp.loc["random", "diff_lo"] > 0
