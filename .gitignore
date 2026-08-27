@@ -1,4 +1,4 @@
-# Data — never commit the full Criteo file (~300MB+). Only the small sample is tracked.
+# Data - never commit the full Criteo file (~300MB+). Only the small sample is tracked.
 data/raw/
 data/processed/
 data/external/

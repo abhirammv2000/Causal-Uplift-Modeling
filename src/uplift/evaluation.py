@@ -46,7 +46,7 @@ def qini_curve(y, t, uplift) -> pd.DataFrame:
     """Cumulative Qini curve.
 
     At each prefix of the uplift-sorted population the Qini value is
-    ``Y_t - Y_c * (N_t / N_c)`` — the incremental positive outcomes attributable
+    ``Y_t - Y_c * (N_t / N_c)`` - the incremental positive outcomes attributable
     to treatment, with the control response scaled to the treated group size.
     Returns a DataFrame with ``n_targeted``, ``fraction``, and ``qini``, plus a
     ``random`` straight-line baseline.
@@ -135,7 +135,7 @@ def uplift_at_k(y, t, uplift, k: float = 0.3) -> float:
     """Estimated uplift among the top ``k`` fraction ranked by predicted uplift.
 
     This is the difference in outcome rates between treated and control units
-    within the highest-scoring ``k`` of the population — the quantity a
+    within the highest-scoring ``k`` of the population - the quantity a
     marketer actually cares about when targeting the top decile/quantile.
     """
     if not 0.0 < k <= 1.0:
@@ -224,7 +224,7 @@ def bootstrap_metric(
     """Bootstrap a percentile confidence interval for an uplift metric.
 
     A single Qini number is nearly meaningless without a sense of its sampling
-    variability — uplift signal is noisy. Resampling units with replacement and
+    variability - uplift signal is noisy. Resampling units with replacement and
     recomputing the metric gives an honest interval. Returns ``point``, ``lo``,
     ``hi`` (the (1-alpha) percentile CI), and ``se``.
     """
@@ -263,7 +263,7 @@ def compare_models_bootstrap(
     A leaderboard that ranks models by a point metric is misleading when their
     confidence intervals overlap. This resamples the evaluation set **once per
     iteration** and scores every model on the *same* resample, so the paired
-    difference ``best − other`` cancels the shared sampling noise — the right way
+    difference ``best − other`` cancels the shared sampling noise - the right way
     to ask "is the top model really better, or is this within noise?".
 
     Returns a DataFrame indexed by model (sorted by point, best first) with:
@@ -322,7 +322,7 @@ def uplift_calibration(y, t, uplift, bins: int = 10) -> pd.DataFrame:
 
     Units are grouped into ``bins`` by predicted uplift; within each bin we
     report the mean *predicted* uplift and the *observed* uplift (treated rate
-    minus control rate). A well-calibrated model tracks the diagonal — a much
+    minus control rate). A well-calibrated model tracks the diagonal - a much
     stronger statement than merely ranking units correctly.
     """
     y, t, uplift = _as_arrays(y, t, uplift)

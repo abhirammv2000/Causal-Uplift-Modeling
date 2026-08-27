@@ -1,6 +1,6 @@
 """Create the small committed sample at data/sample/criteo_sample.parquet.
 
-This always generates a **synthetic** Criteo-like dataset — same schema,
+This always generates a **synthetic** Criteo-like dataset - same schema,
 imbalanced ~85/15 treatment assignment, low visit / conversion rates, and
 genuinely heterogeneous treatment effects (persuadables and sleeping dogs) so
 uplift models have signal to find. It guarantees the repo runs end-to-end for
@@ -43,8 +43,8 @@ def synthesize(n: int, seed: int = 42) -> pd.DataFrame:
     t = (rng.random(n) < 0.85).astype("int8")
 
     # Exposure is the true mediator: only the "compliers" among the assigned
-    # actually see the ad. One-sided non-compliance — a control user is never
-    # exposed — exactly as in the real Criteo campaign (where exposure is low).
+    # actually see the ad. One-sided non-compliance - a control user is never
+    # exposed - exactly as in the real Criteo campaign (where exposure is low).
     compliance_rate = 0.35
     exposure = ((t == 1) & (rng.random(n) < compliance_rate)).astype("int8")
 

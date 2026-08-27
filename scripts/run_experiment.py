@@ -47,7 +47,7 @@ def main() -> None:
 
     if args.use_raw:
         # Load the full file with memory-efficient dtypes, then let the pipeline
-        # take a *stratified* subsample (cfg.n_rows) — unbiased, unlike reading
+        # take a *stratified* subsample (cfg.n_rows) - unbiased, unlike reading
         # the first N rows of a possibly-ordered file.
         dtypes = {f: "float32" for f in config.FEATURES}
         for c in (config.TREATMENT_COL, config.EXPOSURE_COL,

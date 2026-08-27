@@ -13,14 +13,14 @@ pip install -r requirements.txt
 pip install -e .
 ```
 
-Tested on **Python 3.11–3.13**.
+Tested on **Python 3.11-3.13**.
 
 ## A note on `causalml`
 
 The notebooks reference `causalml` for cross-checking, but it is **optional and
 intentionally not a hard dependency**. It ships native (Cython) extensions that
-frequently fail to build on Python 3.13 / Windows. The core of this project —
-the `uplift` package, every metric, and all four estimators — depends only on
+frequently fail to build on Python 3.13 / Windows. The core of this project -
+the `uplift` package, every metric, and all four estimators - depends only on
 `scikit-learn`, `scikit-uplift`, `xgboost`, and `lightgbm`, which install
 cleanly everywhere.
 

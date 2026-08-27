@@ -10,7 +10,7 @@ lightgbm>=4.1
 
 # Uplift / causal modeling
 scikit-uplift>=0.5.1      # sklift: meta-learners + uplift metrics (pure-python, py3.13 friendly)
-# causalml>=0.15          # optional; heavy native build, often unavailable on Python 3.13 — see docs/INSTALL.md
+# causalml>=0.15          # optional; heavy native build, often unavailable on Python 3.13 - see docs/INSTALL.md
 
 # Statistics & inference
 statsmodels>=0.14

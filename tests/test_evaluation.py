@@ -100,7 +100,7 @@ def test_matches_scikit_uplift(trial):
     """Cross-check the from-scratch metrics against the reference sklift library."""
     sklift_metrics = pytest.importorskip("sklift.metrics")
     y, t, u = trial
-    # uplift@k is an exact, unambiguous quantity — it must match to the bit.
+    # uplift@k is an exact, unambiguous quantity - it must match to the bit.
     assert ev.uplift_at_k(y, t, u, 0.3) == pytest.approx(
         sklift_metrics.uplift_at_k(y, u, t, strategy="overall", k=0.3), abs=1e-9
     )

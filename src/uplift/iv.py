@@ -5,8 +5,8 @@ users were actually *exposed* to the ad (``exposure``). So everything the uplift
 models estimate is an **intent-to-treat (ITT)** effect: the effect of being
 *targeted*, diluted by everyone who was targeted but never saw an ad.
 
-The effect on the users the ad actually reached — the **complier average causal
-effect (CACE)**, a.k.a. LATE — is recovered with the **Wald estimator**, using
+The effect on the users the ad actually reached - the **complier average causal
+effect (CACE)**, a.k.a. LATE - is recovered with the **Wald estimator**, using
 randomized assignment as an instrument for exposure:
 
     CACE = ITT_Y / ITT_D
@@ -14,13 +14,13 @@ randomized assignment as an instrument for exposure:
 
 Identification rests on the standard IV assumptions, all plausible here:
 
-* **Randomization** — assignment is random (true by design in an RCT).
-* **Exclusion** — assignment moves the outcome *only* through exposure.
-* **Monotonicity / no defiers** — being assigned never makes a user *less* likely
+* **Randomization** - assignment is random (true by design in an RCT).
+* **Exclusion** - assignment moves the outcome *only* through exposure.
+* **Monotonicity / no defiers** - being assigned never makes a user *less* likely
   to be exposed.
-* **Relevance** — a non-zero first stage (assignment actually shifts exposure).
+* **Relevance** - a non-zero first stage (assignment actually shifts exposure).
 
-Criteo has *one-sided* non-compliance — a control user can never be exposed — so
+Criteo has *one-sided* non-compliance - a control user can never be exposed - so
 the first stage ``ITT_D`` is simply the exposure rate among the assigned, and the
 CACE is the ITT rescaled by that compliance rate.
 """

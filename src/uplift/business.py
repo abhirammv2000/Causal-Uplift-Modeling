@@ -9,7 +9,7 @@ predicted uplift yields
               - cost  * (number of users treated in top-k)
 
 The incremental-conversions term is read straight off the uplift curve, which is
-estimated from the randomized treated/control arms — so the profit is causal,
+estimated from the randomized treated/control arms - so the profit is causal,
 not a correlational guess.
 """
 

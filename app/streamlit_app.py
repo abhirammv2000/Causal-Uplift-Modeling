@@ -28,7 +28,7 @@ from uplift.config import ExperimentConfig  # noqa: E402
 st.set_page_config(page_title="Uplift Targeting Explorer", layout="wide")
 
 
-@st.cache_resource(show_spinner="Training uplift models on the sample…")
+@st.cache_resource(show_spinner="Training uplift models on the sample...")
 def _train(outcome: str, base_learner: str):
     """Fit the models once and cache them across reruns."""
     df = data.load_sample()
@@ -37,10 +37,10 @@ def _train(outcome: str, base_learner: str):
     return result
 
 
-st.title("🎯 Uplift Targeting & ROI Explorer")
+st.title(" Uplift Targeting & ROI Explorer")
 st.caption(
     "Who should we treat? Ranking by **incremental** conversions, not raw "
-    "propensity. Trained on the committed synthetic Criteo-like sample — the "
+    "propensity. Trained on the committed synthetic Criteo-like sample - the "
     "methodology is identical on the full real dataset."
 )
 
@@ -93,7 +93,7 @@ st.dataframe(result.metrics.round(4))
 st.info(
     f"At ${value:.2f}/conversion and ${cost:.2f}/treatment, **{model_name}** is "
     f"most profitable targeting the top **{decision.best_fraction:.0%}** of users "
-    f"— earning **${decision.uplift_over_treat_all:,.0f}** more than treating "
+    f" - earning **${decision.uplift_over_treat_all:,.0f}** more than treating "
     f"everyone. Profit is read off the uplift curve, estimated from the "
-    f"randomized treated/control arms, so it is causal — not a correlational guess."
+    f"randomized treated/control arms, so it is causal - not a correlational guess."
 )

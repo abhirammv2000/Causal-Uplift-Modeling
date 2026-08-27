@@ -56,7 +56,7 @@ def load_raw(
 
     ``n_rows`` limits how many rows are read (useful for quick experiments);
     note this reads the *first* n rows, so shuffle before relying on it for
-    unbiased estimates — :func:`stratified_sample` is preferred for that.
+    unbiased estimates - :func:`stratified_sample` is preferred for that.
     """
     path = path or (config.RAW_DIR / config.RAW_FILENAME)
     if not path.exists():
