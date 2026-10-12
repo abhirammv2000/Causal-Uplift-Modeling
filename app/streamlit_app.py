@@ -37,7 +37,7 @@ def _train(outcome: str, base_learner: str):
     return result
 
 
-st.title(" Uplift Targeting & ROI Explorer")
+st.title("Uplift Targeting & ROI Explorer")
 st.caption(
     "Who should we treat? Ranking by **incremental** conversions, not raw "
     "propensity. Trained on the committed synthetic Criteo-like sample - the "
@@ -95,5 +95,5 @@ st.info(
     f"most profitable targeting the top **{decision.best_fraction:.0%}** of users "
     f" - earning **${decision.uplift_over_treat_all:,.0f}** more than treating "
     f"everyone. Profit is read off the uplift curve, estimated from the "
-    f"randomized treated/control arms, so it is causal - not a correlational guess."
+    f"randomized treated/control arms."
 )

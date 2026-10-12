@@ -32,25 +32,27 @@ uplift metrics. Base learner: LightGBM.
 
 | Model | Qini ↑ | AUUC ↑ | Uplift @ 10% | Uplift @ 30% |
 |-------|:------:|:------:|:------------:|:------------:|
-| S-learner           | 0.090 | 0.091 | 0.064 | 0.030 |
-| X-learner               | 0.082 | 0.084 | 0.064 | 0.030 |
-| T-learner               | 0.076 | 0.078 | 0.062 | 0.027 |
-| Class transformation    | 0.059 | 0.060 | 0.054 | 0.025 |
+| S-learner           | 0.0946 | 0.0963 | 0.0622 | 0.0307 |
+| X-learner               | 0.0792 | 0.0805 | 0.0613 | 0.0285 |
+| T-learner               | 0.0692 | 0.0704 | 0.0584 | 0.0271 |
+| Class transformation    | 0.0608 | 0.0623 | 0.0565 | 0.0246 |
 
 *Qini / AUUC are normalized so 0 = random targeting and 1 = a perfect oracle.*
 
-Bootstrapped 95% CIs (S-learner, 300 resamples) put Qini at 0.090 [0.075, 0.104]
-and uplift@10% at 0.064 [0.055, 0.075], both well above zero.
+Bootstrapped 95% CIs (S-learner, 300 resamples) put Qini at 0.095 [0.082, 0.109]
+and uplift@10% at 0.062 [0.054, 0.073], both well above zero.
 
-The ranking between models is not resolved, though. A paired bootstrap (every
-model scored on the same resamples, `evaluation.compare_models_bootstrap`) puts
-the meta-learner Qini differences on CIs that straddle zero, so they are a tie.
-The table leads with the S-learner because it is the simplest of the three, not
-because it is provably best. Class transformation is the weakest throughout.
+A paired bootstrap (every model scored on the same resamples,
+`evaluation.compare_models_bootstrap`) puts the S-learner ahead of the X-learner
+(Qini difference 0.016, CI [0.004, 0.029]), the T-learner (0.025, [0.012, 0.040])
+and class transformation (0.034, [0.019, 0.048]); none of those CIs contain zero.
+The X-learner gap is the narrowest, and the bootstrap resamples only the test
+set, so it ignores variation from retraining. Treat the S-over-X ordering as
+likely rather than certain. Figures are from one run (seed 42).
 
 The business reading: the average treatment effect on `visit` is only +0.0103,
 a +27% relative lift over the 3.8% control rate. The model's top 10% of users
-show an uplift of +0.064, about 6x the average, so spending on that decile
+show an uplift of +0.062, about 6x the average, so spending on that decile
 rather than on everyone is where the modeling earns its keep.
 
 <p align="center">
@@ -235,8 +237,8 @@ the harder, more interesting causal questions - are:
   default for robustness.
 - **From RCT to observational.** Criteo is randomized, so confounding is handled
   for free. The harder tier - backdoor adjustment, sensitivity to *unobserved*
-  confounding, overlap diagnostics - is where causal inference gets genuinely
-  difficult and would be the most valuable extension.
+  confounding, overlap diagnostics - is where causal inference gets hard and
+  would be the most valuable extension.
 - **Model selection rigor.** Nested cross-validation and hyperparameter tuning
   with uplift-aware (Qini) scoring, rather than library defaults.
 

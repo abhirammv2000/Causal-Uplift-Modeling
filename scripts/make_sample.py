@@ -2,7 +2,7 @@
 
 This always generates a **synthetic** Criteo-like dataset - same schema,
 imbalanced ~85/15 treatment assignment, low visit / conversion rates, and
-genuinely heterogeneous treatment effects (persuadables and sleeping dogs) so
+heterogeneous treatment effects (persuadables and sleeping dogs) so
 uplift models have signal to find. It guarantees the repo runs end-to-end for
 anyone who clones it.
 
@@ -59,7 +59,7 @@ def synthesize(n: int, seed: int = 42) -> pd.DataFrame:
     p_visit = _sigmoid(base + exposure * tau)
     visit = (rng.random(n) < p_visit).astype("int8")
 
-    # Conversion is rarer and only really happens given a visit.
+    # Conversion is rarer and only happens given a visit.
     p_conv = _sigmoid(-2.0 + 1.5 * (visit == 1) + 0.4 * X[:, 4] + 0.5 * exposure * X[:, 1])
     conversion = ((rng.random(n) < p_conv) & (visit == 1)).astype("int8")
 
